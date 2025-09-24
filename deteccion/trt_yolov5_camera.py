@@ -6,7 +6,7 @@ import tensorrt as trt
 import time
 
 CONF_THRESH = 0.4
-ENGINE_PATH = "../best3.engine"
+ENGINE_PATH = "../best4_100epocas.engine"
 INPUT_WIDTH = 640
 INPUT_HEIGHT = 640
 

@@ -10,7 +10,7 @@ import time
 # — Parámetros de detección —
 CONF_THRESH   = 0.5             # umbral mínimo de confianza
 NMS_THRESH    = 0.4             # umbral de NMS
-ENGINE_PATH = "../best3.engine"
+ENGINE_PATH = "../best4_100epocas.engine"
 INPUT_WIDTH   = 640
 INPUT_HEIGHT  = 640
 CLASS_PERSON  = 0               # solo mostrar detecciones de clase 0
