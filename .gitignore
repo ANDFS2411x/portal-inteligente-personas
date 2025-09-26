@@ -8,3 +8,6 @@ __pycache__/
 .env
 myenv/
 *.txt
+*.avi
+*.csv
+*.mp4
