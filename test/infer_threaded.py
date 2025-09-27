@@ -1,5 +1,6 @@
 # detect3.py (con métricas + grabación)
 
+#---------- Librerias --------------
 import os
 import time
 import csv
@@ -66,7 +67,7 @@ def plot_one_box(x, img, color=(0, 0, 255), label=None, line_thickness=None):
         )
 
 
-def nms_numpy(boxes, scores, iou_thres=0.45):
+def nms_numpy(boxes, scores, iou_thres=IOU_THRESHOLD):
     if len(boxes) == 0:
         return []
     boxes = boxes.astype(np.float32)
