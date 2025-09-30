@@ -1,6 +1,6 @@
-# detect_preview_smooth_tracking.py
-# 3 hilos: captura + detección (con tracking) + preview persistente
-# Ligero para Jetson: tracker IoU/SORT-lite sin dependencias externas.
+
+# 3 hilos: captura + detección + preview suave (persistente, sin colas)
+# No guarda nada. Ventana siempre abierta; si no hay detección, muestra un placeholder.
 
 import os
 import time
@@ -12,32 +12,34 @@ import threading
 import queue
 import signal
 import sys
+import collections
+import warnings
+from filterpy.kalman import KalmanFilter
+from sklearn.utils.linear_assignment_ import linear_assignment
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # ========= Config =========
 INPUT_W = 640
 INPUT_H = 640
 CONF_THRESH = 0.30
-IOU_THRESHOLD = 0.65                 # NMS
+IOU_THRESHOLD = 0.65
 ENGINE_PATH = "../best4_100epocas.engine"
 
-CAP_QUEUE_MAX = 5                     # cola captura -> detección
-VIZ_MAX_FPS = 12.0                    # límite FPS de preview
-VIZ_TTL = 0.6                         # si no hay frame anotado reciente, placeholder
+CAP_QUEUE_MAX = 5          # cola de captura -> detección
+VIZ_MAX_FPS = 10           # límite de FPS para mostrar (preview)
+VIZ_TTL = 0.6              # si no llega frame anotado en este tiempo, mostrar placeholder
 SHOW_FPS_ON_FRAME = True
-
-# Tracker (SORT-lite) hiperparámetros
-TRACK_IOU_MATCH = 0.35                # IoU mínimo para asociar track<->detección
-TRACK_MAX_AGE = 20                    # frames sin ver antes de eliminar track
-TRACK_MIN_HITS = 3                    # hits para “confirmar” un track
 
 # ========= Buffers & control =========
 frame_queue = queue.Queue(maxsize=CAP_QUEUE_MAX)
-stop_event  = threading.Event()
+stop_event = threading.Event()
 
+# Buffer atómico para preview (último frame anotado)
 viz_lock = threading.Lock()
-viz_frame = None
-viz_last_ts = 0.0
-viz_event = threading.Event()
+viz_frame = None           # np.ndarray BGR anotado
+viz_last_ts = 0.0          # timestamp de última actualización
+viz_event = threading.Event()  # señal: “hay frame nuevo”
 
 # ========= Utilidades =========
 def letterbox(im, new_shape=(640, 640), color=(128, 128, 128)):
@@ -54,14 +56,17 @@ def letterbox(im, new_shape=(640, 640), color=(128, 128, 128)):
     )
     return im_padded, r, dw, dh
 
-def plot_one_box(x, img, color=(0, 0, 255), label=None, line_thickness=None):
+def plot_one_box(x, img, color=(0, 255, 0), label=None, line_thickness=None):
     tl = line_thickness or max(1, round(0.002 * (img.shape[0] + img.shape[1]) / 2) + 1)
     c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
     if label:
         tf = max(tl - 1, 1)
+        t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
+        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+        cv2.rectangle(img, (c1[0], c1[1] - t_size[1] - 4), c2, color, -1, cv2.LINE_AA)  # filled background
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3,
-                    (225, 255, 255), thickness=tf, lineType=cv2.LINE_AA)
+                    (0, 0, 0), thickness=tf, lineType=cv2.LINE_AA)
 
 def nms_numpy(boxes, scores, iou_thres=IOU_THRESHOLD):
     if len(boxes) == 0:
@@ -87,108 +92,113 @@ def nms_numpy(boxes, scores, iou_thres=IOU_THRESHOLD):
         order = order[np.where(iou <= iou_thres)[0] + 1]
     return keep
 
-# ========= Tracker (SORT-lite sin Kalman) =========
-def iou_matrix(tracks, dets):
-    """tracks: (N,4) dets: (M,4) -> IoU NxM"""
-    if len(tracks) == 0 or len(dets) == 0:
-        return np.zeros((len(tracks), len(dets)), dtype=np.float32)
-    t = np.array(tracks, dtype=np.float32)
-    d = np.array(dets, dtype=np.float32)
+# ========= SORT Tracking Functions =========
+def iou(bb_test, bb_gt):
+    """
+    Compute Intersection over Union (IoU) between two bounding boxes.
+    """
+    xx1 = np.maximum(bb_test[0], bb_gt[0])
+    yy1 = np.maximum(bb_test[1], bb_gt[1])
+    xx2 = np.minimum(bb_test[2], bb_gt[2])
+    yy2 = np.minimum(bb_test[3], bb_gt[3])
+    w = np.maximum(0., xx2 - xx1)
+    h = np.maximum(0., yy2 - yy1)
+    wh = w * h
+    union = ((bb_test[2] - bb_test[0]) * (bb_test[3] - bb_test[1]) +
+             (bb_gt[2] - bb_gt[0]) * (bb_gt[3] - bb_gt[1]) - wh)
+    if union <= 0:
+        return 0.0
+    return wh / union
 
-    # t: (N,4), d: (M,4)
-    t_x1, t_y1, t_x2, t_y2 = t[:,0:1], t[:,1:2], t[:,2:3], t[:,3:4]
-    d_x1, d_y1, d_x2, d_y2 = d[:,0], d[:,1], d[:,2], d[:,3]
+def convert_bbox_to_z(bbox):
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
+    x = bbox[0] + w / 2.
+    y = bbox[1] + h / 2.
+    s = w * h
+    r = w / float(h)
+    return np.array([x, y, s, r]).reshape((4, 1))
 
-    xx1 = np.maximum(t_x1, d_x1)
-    yy1 = np.maximum(t_y1, d_y1)
-    xx2 = np.minimum(t_x2, d_x2)
-    yy2 = np.minimum(t_y2, d_y2)
+def convert_x_to_bbox(x, score=None):
+    w = np.sqrt(x[2] * x[3])
+    h = x[2] / w
+    if score is None:
+        return np.array([x[0] - w / 2., x[1] - h / 2., x[0] + w / 2., x[1] + h / 2.]).reshape((1, 4))
+    else:
+        return np.array([x[0] - w / 2., x[1] - h / 2., x[0] + w / 2., x[1] + h / 2., score]).reshape((1, 5))
 
-    w = np.maximum(0.0, xx2 - xx1 + 1)
-    h = np.maximum(0.0, yy2 - yy1 + 1)
-    inter = w * h
-
-    area_t = (t_x2 - t_x1 + 1) * (t_y2 - t_y1 + 1)
-    area_d = (d_x2 - d_x1 + 1) * (d_y2 - d_y1 + 1)
-    union = area_t + area_d - inter
-    return (inter / np.maximum(union, 1e-6)).astype(np.float32)
-
-class Track:
-    __slots__ = ("tid", "bbox", "score", "age", "hits", "time_since_update")
-    def __init__(self, tid, bbox, score):
-        self.tid = tid
-        self.bbox = np.array(bbox, dtype=np.float32)
-        self.score = float(score)
-        self.age = 0
-        self.hits = 1
+class KalmanBoxTracker(object):
+    count = 0
+    def __init__(self, bbox):
+        self.kf = KalmanFilter(dim_x=7, dim_z=4)
+        self.kf.F = np.array(
+            [[1, 0, 0, 0, 1, 0, 0], [0, 1, 0, 0, 0, 1, 0], [0, 0, 1, 0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0],
+             [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 1]])
+        self.kf.H = np.array(
+            [[1, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]])
+        self.kf.R[2:, 2:] *= 10.
+        self.kf.P[4:, 4:] *= 1000.
+        self.kf.P *= 10.
+        self.kf.Q[-1, -1] *= 0.01
+        self.kf.Q[4:, 4:] *= 0.01
+        self.kf.x[:4] = convert_bbox_to_z(bbox)
         self.time_since_update = 0
+        self.id = KalmanBoxTracker.count
+        KalmanBoxTracker.count += 1
+        self.history = []
+        self.hits = 0
+        self.hit_streak = 0
+        self.age = 0
 
-class IoUTracker:
-    def __init__(self, iou_match=0.35, max_age=20, min_hits=3):
-        self.iou_match = iou_match
-        self.max_age = max_age
-        self.min_hits = min_hits
-        self.tracks = []
-        self.next_id = 1
+    def update(self, bbox):
+        self.time_since_update = 0
+        self.history = []
+        self.hits += 1
+        self.hit_streak += 1
+        self.kf.update(convert_bbox_to_z(bbox))
 
-    def _greedy_assign(self, iou_mat, thr):
-        if iou_mat.size == 0:
-            return [], set(range(iou_mat.shape[0])), set(range(iou_mat.shape[1]))
-        matches = []
-        t_used, d_used = set(), set()
-        m = iou_mat.copy()
-        while True:
-            i, j = np.unravel_index(np.argmax(m), m.shape)
-            if m[i, j] < thr:
-                break
-            matches.append((i, j))
-            t_used.add(i); d_used.add(j)
-            m[i, :] = -1.0
-            m[:, j] = -1.0
-        t_all = set(range(iou_mat.shape[0]))
-        d_all = set(range(iou_mat.shape[1]))
-        return matches, (t_all - t_used), (d_all - d_used)
+    def predict(self):
+        if (self.kf.x[6] + self.kf.x[2]) <= 0:
+            self.kf.x[6] *= 0.0
+        self.kf.predict()
+        self.age += 1
+        if self.time_since_update > 0:
+            self.hit_streak = 0
+        self.time_since_update += 1
+        self.history.append(convert_x_to_bbox(self.kf.x))
+        return self.history[-1]
 
-    def update(self, det_boxes, det_scores):
-        # 1) Actualiza envejecimiento
-        for tr in self.tracks:
-            tr.age += 1
-            tr.time_since_update += 1
+    def get_state(self):
+        return convert_x_to_bbox(self.kf.x)
 
-        # 2) Asociar detecciones a tracks por IoU (greedy)
-        T = len(self.tracks)
-        D = len(det_boxes)
-        if T > 0 and D > 0:
-            iou_mat = iou_matrix([tr.bbox for tr in self.tracks], det_boxes)
-            matches, un_t, un_d = self._greedy_assign(iou_mat, self.iou_match)
+def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
+    if len(trackers) == 0:
+        return np.empty((0, 2), dtype=int), np.arange(len(detections)), np.empty((0, 5), dtype=int)
+    iou_matrix = np.zeros((len(detections), len(trackers)), dtype=np.float32)
+    for d, det in enumerate(detections):
+        for t, trk in enumerate(trackers):
+            iou_matrix[d, t] = iou(det, trk)
+    matched_indices = linear_assignment(-iou_matrix)
+    unmatched_detections = []
+    for d, det in enumerate(detections):
+        if d not in matched_indices[:, 0]:
+            unmatched_detections.append(d)
+    unmatched_trackers = []
+    for t, trk in enumerate(trackers):
+        if t not in matched_indices[:, 1]:
+            unmatched_trackers.append(t)
+    matches = []
+    for m in matched_indices:
+        if iou_matrix[m[0], m[1]] < iou_threshold:
+            unmatched_detections.append(m[0])
+            unmatched_trackers.append(m[1])
         else:
-            matches = []
-            un_t = set(range(T))
-            un_d = set(range(D))
-
-        # 3) Actualizar tracks emparejados
-        for ti, dj in matches:
-            tr = self.tracks[ti]
-            tr.bbox = np.array(det_boxes[dj], dtype=np.float32)
-            tr.score = float(det_scores[dj])
-            tr.hits += 1
-            tr.time_since_update = 0
-
-        # 4) Crear tracks nuevos por detecciones no emparejadas
-        for dj in un_d:
-            self.tracks.append(Track(self.next_id, det_boxes[dj], det_scores[dj]))
-            self.next_id += 1
-
-        # 5) Eliminar tracks demasiado viejos
-        self.tracks = [tr for tr in self.tracks if tr.time_since_update <= self.max_age]
-
-        # 6) Devuelve los tracks “visibles” (confirmados o recién actualizados)
-        visible = []
-        for tr in self.tracks:
-            confirmed = tr.hits >= self.min_hits or tr.time_since_update == 0
-            if confirmed:
-                visible.append(tr)
-        return visible
+            matches.append(m.reshape(1, 2))
+    if len(matches) == 0:
+        matches = np.empty((0, 2), dtype=int)
+    else:
+        matches = np.concatenate(matches, axis=0)
+    return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
 
 # ========= Wrapper TensorRT =========
 class YoLov5TRT:
@@ -287,6 +297,7 @@ def capture_thread(cap):
         ok, frame = cap.read()
         if not ok:
             break
+        # evitar lag: si lleno, descarta el más viejo
         if not frame_queue.full():
             frame_queue.put(frame)
         else:
@@ -298,15 +309,20 @@ def capture_thread(cap):
     stop_event.set()
 
 def detection_thread():
-    global viz_frame, viz_last_ts
+    # Contexto CUDA SOLO en este hilo
     ctx = cuda.Device(0).make_context()
     frame_id = 0
-    last_sent_to_viz = 0.0
-    tracker = IoUTracker(iou_match=TRACK_IOU_MATCH, max_age=TRACK_MAX_AGE, min_hits=TRACK_MIN_HITS)
+    last_sent_to_viz = 0.0  # para limitar VIZ_MAX_FPS
+
+    trackers = []
+    max_age = 4
+    idstp = collections.defaultdict(list)
+    idcnt = []
+    incnt, outcnt = 0, 0
 
     try:
         model = YoLov5TRT(ENGINE_PATH)
-        print(f"🚀 Detección+Tracking | CONF={CONF_THRESH} | IOU_NMS={IOU_THRESHOLD} | IOU_MATCH={TRACK_IOU_MATCH}")
+        print(f"🚀 Detección iniciada | CONF={CONF_THRESH} | IOU={IOU_THRESHOLD}")
         while not stop_event.is_set():
             try:
                 frame = frame_queue.get(timeout=0.2)
@@ -314,36 +330,101 @@ def detection_thread():
                 continue
 
             t0 = time.time()
-            det_boxes, det_scores = model.infer(frame)
+            boxes, scores = model.infer(frame)
             dt = time.time() - t0
             fps = 1.0 / max(dt, 1e-6)
 
-            if det_scores:
-                tracks = tracker.update(det_boxes, det_scores)
-                ids = [tr.tid for tr in tracks]
-                confs = [tr.score for tr in tracks]
-                print(f"[TRACK] frame {frame_id} | fps:{fps:.1f} | tracks:{len(tracks)} | ids:{ids} | confs:{[round(c,2) for c in confs]}")
+            boxes_np = np.array(boxes) if boxes else np.empty((0, 4))
+            H, W = frame.shape[:2]
+
+            # Predict trackers
+            trks = np.zeros((len(trackers), 5))
+            to_del = []
+            for t, trk in enumerate(trks):
+                pos = trackers[t].predict()[0]
+                trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
+                if np.any(np.isnan(pos)):
+                    to_del.append(t)
+            trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
+            for t in reversed(to_del):
+                trackers.pop(t)
+
+            # Associate
+            matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(boxes_np, trks)
+
+            # Update matched trackers
+            for t, trk in enumerate(trackers):
+                if t not in unmatched_trks:
+                    d = matched[np.where(matched[:, 1] == t)[0], 0][0]
+                    trk.update(boxes_np[d, :])
+                    xmin, ymin, xmax, ymax = map(int, boxes_np[d, :])
+                    cy = int((ymin + ymax) / 2)
+
+                    # Counting logic (using initial position)
+                    initial_y = idstp[trk.id][0][1] if idstp[trk.id] else 0
+                    if initial_y < H // 2 and cy > H // 2 and trk.id not in idcnt:
+                        incnt += 1
+                        print("id: " + str(trk.id) + " - IN ")
+                        idcnt.append(trk.id)
+                    elif initial_y > H // 2 and cy < H // 2 and trk.id not in idcnt:
+                        outcnt += 1
+                        print("id: " + str(trk.id) + " - OUT ")
+                        idcnt.append(trk.id)
+
+            # Create new trackers for unmatched detections
+            for i in unmatched_dets:
+                trk = KalmanBoxTracker(boxes_np[i, :])
+                trackers.append(trk)
+                u = trk.kf.x[0][0]
+                v = trk.kf.x[1][0]
+                idstp[trk.id].append([u, v])
+
+            # Remove old trackers
+            i = len(trackers) - 1
+            while i >= 0:
+                if trackers[i].time_since_update > max_age:
+                    trackers.pop(i)
+                i -= 1
+
+            if boxes:
+                confs_txt = ", ".join(f"{s:.2f}" for s in scores)
+                print(f"[DETECCIÓN] frame {frame_id} | fps: {fps:.1f} | "
+                      f"{len(scores)} persona(s) | confs: {confs_txt}")
                 sys.stdout.flush()
 
-                now = time.time()
-                if (now - last_sent_to_viz) >= (1.0 / VIZ_MAX_FPS):
-                    frame_vis = frame.copy()
-                    for tr in tracks:
-                        x1, y1, x2, y2 = map(int, tr.bbox)
-                        label = f"ID:{tr.tid} {tr.score:.2f}"
-                        plot_one_box([x1, y1, x2, y2], frame_vis, label=label)
-                    if SHOW_FPS_ON_FRAME:
-                        cv2.putText(frame_vis, f"FPS:{fps:.1f}", (20, 30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            # Throttle de preview
+            now = time.time()
+            if (now - last_sent_to_viz) >= (1.0 / VIZ_MAX_FPS):
+                frame_vis = frame.copy()
 
-                    with viz_lock:
-                        viz_frame = frame_vis
-                        viz_last_ts = now
-                    viz_event.set()
-                    last_sent_to_viz = now
-            else:
-                # también hay que avanzar el envejecimiento del tracker
-                tracker.update([], [])
+                # Draw all trackers (using current state, predicted or updated)
+                for trk in trackers:
+                    pos = trk.get_state()[0]
+                    plot_one_box(pos, frame_vis, color=(0, 255, 0), label=f"person:{trk.id}")
+
+                # Draw text (Total, IN, OUT, FPS) at the bottom with green background
+                text = f"Total: {incnt + outcnt}  IN: {incnt}  OUT: {outcnt}  FPS: {fps:.1f}"
+                font = cv2.FONT_HERSHEY_DUPLEX
+                font_scale = 0.7
+                thickness = 1
+                t_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+                bg_height = t_size[1] + 10
+                bg_top = H - bg_height
+                # Draw semi-transparent green background
+                overlay = frame_vis.copy()
+                cv2.rectangle(overlay, (0, bg_top), (W, H), (0, 255, 0), -1)
+                alpha = 0.5  # Transparency factor
+                cv2.addWeighted(overlay, alpha, frame_vis, 1 - alpha, 0, frame_vis)
+                # Draw black text
+                cv2.putText(frame_vis, text, (10, H - 5), font, font_scale, (0, 0, 0), thickness, cv2.LINE_AA)
+
+                # Publicar como “último frame” (last-writer-wins)
+                with viz_lock:
+                    global viz_frame, viz_last_ts
+                    viz_frame = frame_vis
+                    viz_last_ts = now
+                viz_event.set()  # avisa al hilo de preview
+                last_sent_to_viz = now
 
             frame_id += 1
     finally:
@@ -353,16 +434,19 @@ def detection_thread():
             pass
 
 def preview_thread():
+    """Ventana persistente. Dibuja el último frame anotado si es reciente; sino, un placeholder."""
     win = "Detección (preview)"
     cv2.namedWindow(win, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(win, 800, 450)
 
-    target_dt = 1.0 / max(1.0, VIZ_MAX_FPS)
+    target_dt = 1.0 / max(1.0, VIZ_MAX_FPS)  # igual usamos esto para no saturar UI
 
     while not stop_event.is_set():
+        # Espera corta por nuevos frames, pero no se bloquea de por vida
         viz_event.wait(timeout=target_dt)
         viz_event.clear()
 
+        # Obtiene el último frame si existe
         with viz_lock:
             frame = None if viz_frame is None else viz_frame.copy()
             last_ts = viz_last_ts
@@ -373,35 +457,48 @@ def preview_thread():
         if fresh:
             to_show = frame
         else:
+            # placeholder negro del tamaño más común
             to_show = np.zeros((360, 640, 3), dtype=np.uint8)
             cv2.putText(to_show, "Esperando deteccion...", (20, 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2, cv2.LINE_AA)
 
         try:
             cv2.imshow(win, to_show)
+            # Mantener UI responsiva y permitir cerrar con ESC/Q
             k = cv2.waitKey(1) & 0xFF
             if k in (27, ord('q'), ord('Q')):
                 stop_event.set()
                 break
         except Exception:
+            # En caso de error de backend de ventana, evita crash
             time.sleep(target_dt)
 
+        # no más de VIZ_MAX_FPS
         time.sleep(max(0.0, target_dt))
+
+    try:
+        cv2.destroyWindow(win)
+    except Exception:
+        pass
 
 # ========= Main =========
 def main():
+    # Ctrl+C -> cierre limpio
     def handle_sigint(sig, frame):
         stop_event.set()
     signal.signal(signal.SIGINT, handle_sigint)
     signal.signal(signal.SIGTERM, handle_sigint)
 
+    # Suele ayudar a que OpenCV no compita por CPU en Jetson
     try:
         cv2.setNumThreads(1)
     except Exception:
         pass
 
+    # Inicializa CUDA
     cuda.init()
 
+    # Cámara (Jetson/GStreamer)
     gst_pipeline = (
         "v4l2src device=/dev/video0 ! "
         "image/jpeg,width=640,height=360,framerate=30/1 ! "
@@ -412,6 +509,7 @@ def main():
         print("❌ No se pudo abrir la cámara")
         return
 
+    # Lanzar hilos
     t_cap = threading.Thread(target=capture_thread, args=(cap,), daemon=True)
     t_det = threading.Thread(target=detection_thread, daemon=True)
     t_viz = threading.Thread(target=preview_thread, daemon=True)
