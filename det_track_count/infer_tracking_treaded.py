@@ -28,7 +28,7 @@ ENGINE_PATH = "../best4_100epocas.engine"
 
 CAP_QUEUE_MAX = 5          # cola de captura -> detección
 VIZ_MAX_FPS = 10           # límite de FPS para mostrar (preview)
-VIZ_TTL = 0.6              # si no llega frame anotado en este tiempo, mostrar placeholder
+
 SHOW_FPS_ON_FRAME = True
 
 # ========= Buffers & control =========
@@ -364,11 +364,11 @@ def detection_thread():
                     initial_y = idstp[trk.id][0][1] if idstp[trk.id] else 0
                     if initial_y < H // 2 and cy > H // 2 and trk.id not in idcnt:
                         incnt += 1
-                        print("id: " + str(trk.id) + " - IN ")
+                        print("id: " + str(trk.id) + " - OUT ")
                         idcnt.append(trk.id)
                     elif initial_y > H // 2 and cy < H // 2 and trk.id not in idcnt:
                         outcnt += 1
-                        print("id: " + str(trk.id) + " - OUT ")
+                        print("id: " + str(trk.id) + " - IN ")
                         idcnt.append(trk.id)
 
             # Create new trackers for unmatched detections
@@ -403,7 +403,7 @@ def detection_thread():
                     plot_one_box(pos, frame_vis, color=(0, 255, 0), label=f"person:{trk.id}")
 
                 # Draw text (Total, IN, OUT, FPS) at the bottom with green background
-                text = f"Total: {incnt + outcnt}  IN: {incnt}  OUT: {outcnt}  FPS: {fps:.1f}"
+                text = f"Total: {incnt + outcnt}  OUT: {incnt}  IN: {outcnt}  FPS: {fps:.1f}"
                 font = cv2.FONT_HERSHEY_DUPLEX
                 font_scale = 0.7
                 thickness = 1
@@ -434,46 +434,31 @@ def detection_thread():
             pass
 
 def preview_thread():
-    """Ventana persistente. Dibuja el último frame anotado si es reciente; sino, un placeholder."""
+    """Ventana persistente. Siempre muestra el último frame disponible sin placeholder."""
     win = "Detección (preview)"
     cv2.namedWindow(win, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(win, 800, 450)
 
-    target_dt = 1.0 / max(1.0, VIZ_MAX_FPS)  # igual usamos esto para no saturar UI
+    target_dt = 1.0 / max(1.0, VIZ_MAX_FPS)
 
     while not stop_event.is_set():
-        # Espera corta por nuevos frames, pero no se bloquea de por vida
         viz_event.wait(timeout=target_dt)
         viz_event.clear()
 
-        # Obtiene el último frame si existe
         with viz_lock:
             frame = None if viz_frame is None else viz_frame.copy()
-            last_ts = viz_last_ts
 
-        now = time.time()
-        fresh = frame is not None and (now - last_ts) <= VIZ_TTL
+        if frame is not None:
+            try:
+                cv2.imshow(win, frame)
+                k = cv2.waitKey(1) & 0xFF
+                if k in (27, ord('q'), ord('Q')):
+                    stop_event.set()
+                    break
+            except Exception:
+                pass
 
-        if fresh:
-            to_show = frame
-        else:
-            # placeholder negro del tamaño más común
-            to_show = np.zeros((360, 640, 3), dtype=np.uint8)
-            cv2.putText(to_show, "Esperando deteccion...", (20, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2, cv2.LINE_AA)
-
-        try:
-            cv2.imshow(win, to_show)
-            # Mantener UI responsiva y permitir cerrar con ESC/Q
-            k = cv2.waitKey(1) & 0xFF
-            if k in (27, ord('q'), ord('Q')):
-                stop_event.set()
-                break
-        except Exception:
-            # En caso de error de backend de ventana, evita crash
-            time.sleep(target_dt)
-
-        # no más de VIZ_MAX_FPS
+        # Mantiene ritmo constante, pero sin bloquear la UI
         time.sleep(max(0.0, target_dt))
 
     try:
