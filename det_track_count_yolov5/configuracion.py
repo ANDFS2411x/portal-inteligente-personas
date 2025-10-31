@@ -9,4 +9,4 @@ CAP_QUEUE_MAX = 5          # Cola captura → detección
 VIZ_MAX_FPS = 10           # FPS máximo para preview
 SHOW_FPS_ON_FRAME = True   # Mostrar FPS en el frame
 
-MAX_TRACK_AGE = 4          # Máx. frames sin actualizar tracker
+MAX_TRACK_AGE = 6          # Máx. frames sin actualizar tracker

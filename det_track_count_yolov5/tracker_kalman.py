@@ -64,7 +64,7 @@ class KalmanBoxTracker:
     def get_state(self):
         return convert_x_to_bbox(self.kf.x)
 
-def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
+def associate_detections_to_trackers(detections, trackers, iou_threshold=0.2):
     if len(trackers) == 0:
         return np.empty((0,2),dtype=int), np.arange(len(detections)), np.empty((0,5),dtype=int)
     iou_matrix = np.zeros((len(detections), len(trackers)), dtype=np.float32)
