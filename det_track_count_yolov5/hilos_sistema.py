@@ -29,7 +29,6 @@ def capture_thread(cap):
         ok, frame = cap.read()
         if not ok:
             break
-        # Si la cola está llena, descarta el frame más viejo (anti-lag)
         if not frame_queue.full():
             frame_queue.put(frame)
         else:
@@ -42,13 +41,13 @@ def capture_thread(cap):
 
 # ==================== HILO DE DETECCIÓN ====================
 def detection_thread():
-    """Corre la inferencia YOLOv5-TRT + tracking SORT + conteo IN/OUT."""
+    """Corre la inferencia YOLOv5-TRT + tracking SORT + conteo IN/OUT + rastro visual."""
     ctx = cuda.Device(0).make_context()
     frame_id = 0
     last_sent_to_viz = 0.0
 
     trackers = []
-    idstp = collections.defaultdict(list)
+    idstp = collections.defaultdict(list)  # trayectoria (rastro)
     idcnt = []
     incnt, outcnt = 0, 0
 
@@ -70,7 +69,7 @@ def detection_thread():
             boxes_np = np.array(boxes) if boxes else np.empty((0, 4))
             H, W = frame.shape[:2]
 
-            # === Predict ===
+            # === PREDICCIÓN DE KALMAN ===
             trks = np.zeros((len(trackers), 5))
             to_del = []
             for t, trk in enumerate(trks):
@@ -82,18 +81,20 @@ def detection_thread():
             for t in reversed(to_del):
                 trackers.pop(t)
 
-            # === Asociar detecciones ↔ trackers ===
+            # === ASOCIACIÓN (HÚNGARO) ===
             matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(boxes_np, trks)
 
-            # === Actualizar trackers existentes ===
+            # === ACTUALIZAR TRACKERS EXISTENTES ===
             for t, trk in enumerate(trackers):
                 if t not in unmatched_trks:
                     d = matched[np.where(matched[:, 1] == t)[0], 0][0]
                     trk.update(boxes_np[d, :])
                     xmin, ymin, xmax, ymax = map(int, boxes_np[d, :])
                     cy = int((ymin + ymax) / 2)
+                    cx = int((xmin + xmax) / 2)
+                    idstp[trk.id].append([cx, cy])  # guardar trayectoria
 
-                    # === Lógica de conteo (cruza línea media) ===
+                    # === LÓGICA DE CONTEO (línea media) ===
                     initial_y = idstp[trk.id][0][1] if idstp[trk.id] else 0
                     if initial_y < H // 2 and cy > H // 2 and trk.id not in idcnt:
                         incnt += 1
@@ -104,7 +105,7 @@ def detection_thread():
                         print(f"id: {trk.id} - IN")
                         idcnt.append(trk.id)
 
-            # === Crear nuevos trackers ===
+            # === CREAR NUEVOS TRACKERS ===
             for i in unmatched_dets:
                 trk = KalmanBoxTracker(boxes_np[i, :])
                 trackers.append(trk)
@@ -112,28 +113,35 @@ def detection_thread():
                 v = trk.kf.x[1][0]
                 idstp[trk.id].append([u, v])
 
-            # === Eliminar trackers viejos ===
+            # === ELIMINAR TRACKERS VIEJOS ===
             i = len(trackers) - 1
             while i >= 0:
                 if trackers[i].time_since_update > MAX_TRACK_AGE:
                     trackers.pop(i)
                 i -= 1
 
-            # === Mostrar resultados en consola ===
+            # === MOSTRAR RESULTADOS ===
             if boxes:
                 confs_txt = ", ".join(f"{s:.2f}" for s in scores)
                 print(f"[DETECCIÓN] frame {frame_id} | fps: {fps:.1f} | "
                       f"{len(scores)} persona(s) | confs: {confs_txt}")
                 sys.stdout.flush()
 
-            # === Actualizar frame del preview ===
+            # === VISUALIZACIÓN ===
             now = time.time()
             if (now - last_sent_to_viz) >= (1.0 / VIZ_MAX_FPS):
                 frame_vis = frame.copy()
                 for trk in trackers:
                     pos = trk.get_state()[0]
-                    plot_box(pos, frame_vis, color=(0, 255, 0), label=f"person:{trk.id}")
+                    color = (trk.id * 37 % 255, trk.id * 17 % 255, trk.id * 91 % 255)
+                    plot_box(pos, frame_vis, color=color, label=f"ID:{trk.id}")
 
+                    # === DIBUJAR TRAZADO DEL TRACK ===
+                    if trk.id in idstp and len(idstp[trk.id]) > 1:
+                        pts = np.array(idstp[trk.id], np.int32)
+                        cv2.polylines(frame_vis, [pts], False, color, 2)
+
+                # === TEXTO DE INFORMACIÓN ===
                 text = f"Total: {incnt + outcnt}  OUT: {incnt}  IN: {outcnt}  FPS: {fps:.1f}"
                 font = cv2.FONT_HERSHEY_DUPLEX
                 font_scale = 0.7

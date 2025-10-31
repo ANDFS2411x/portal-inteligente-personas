@@ -310,9 +310,7 @@ def main():
 
     # Cámara (Jetson/GStreamer)
     gst_pipeline = (
-        "v4l2src device=/dev/video0 ! "
-        "image/jpeg,width=640,height=360,framerate=30/1 ! "
-        "jpegdec ! videoconvert ! appsink"
+"v4l2src device=/dev/video0 ! video/x-raw,format=YUY2,width=640,height=360,framerate=30/1 ! videoconvert ! appsink"
     )
     cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
     if not cap.isOpened():
