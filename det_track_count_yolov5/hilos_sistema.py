@@ -10,7 +10,9 @@ from configuracion import (
     CAP_QUEUE_MAX, VIZ_MAX_FPS, ENGINE_PATH, CONF_THRESH, IOU_THRESHOLD, MAX_TRACK_AGE
 )
 from detector_trt import YoLov5TRT
-from tracker_kalman import KalmanBoxTracker, associate_detections_to_trackers
+from tracker_kalman import KalmanBoxTracker
+from tracker_kalman import  associate_detections_to_trackers
+
 from utils_visuales import plot_box
 
 # ==================== VARIABLES GLOBALES ====================
@@ -83,7 +85,7 @@ def detection_thread():
 
             # === ASOCIACIÓN (HÚNGARO) ===
             matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(boxes_np, trks)
-
+           
             # === ACTUALIZAR TRACKERS EXISTENTES ===
             for t, trk in enumerate(trackers):
                 if t not in unmatched_trks:
@@ -131,15 +133,20 @@ def detection_thread():
             now = time.time()
             if (now - last_sent_to_viz) >= (1.0 / VIZ_MAX_FPS):
                 frame_vis = frame.copy()
+                linea_y = int(H * 0.5)
+                cv2.line(frame_vis, (0, linea_y), (W, linea_y), (255, 0, 255), 2)
+
                 for trk in trackers:
                     pos = trk.get_state()[0]
                     color = (trk.id * 37 % 255, trk.id * 17 % 255, trk.id * 91 % 255)
                     plot_box(pos, frame_vis, color=color, label=f"ID:{trk.id}")
 
-                    # === DIBUJAR TRAZADO DEL TRACK ===
+
+                    # Dibujo de trayectoria: debe ir dentro del mismo for
                     if trk.id in idstp and len(idstp[trk.id]) > 1:
                         pts = np.array(idstp[trk.id], np.int32)
                         cv2.polylines(frame_vis, [pts], False, color, 2)
+
 
                 # === TEXTO DE INFORMACIÓN ===
                 text = f"Total: {incnt + outcnt}  OUT: {incnt}  IN: {outcnt}  FPS: {fps:.1f}"
