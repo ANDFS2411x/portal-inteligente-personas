@@ -1,44 +1,36 @@
 <div align="center">
 
-# <span style="color:#76B900; text-shadow: 0 0 10px #76B900, 0 0 20px #76B900;">Intelligent People-Counting Portal</span> 🚪📊
+# Intelligent People-Counting Portal 🚪📊
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
-[![Jetson Nano](https://img.shields.io/badge/Platform-NVIDIA_Jetson_Nano-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://developer.nvidia.com/embedded/jetson-nano)
-[![YOLO](https://img.shields.io/badge/Model-YOLOv5s-00FFFF?style=for-the-badge&logo=opencv&logoColor=black)](https://ultralytics.com/yolo)
-[![TensorRT](https://img.shields.io/badge/Optimized-TensorRT_FP16-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://developer.nvidia.com/tensorrt)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00FF7F?style=for-the-badge&logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
+[![Jetson Nano](https://img.shields.io/badge/Platform-NVIDIA_Jetson_Nano-00D26A?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/embedded/jetson-nano)
+[![YOLO](https://img.shields.io/badge/Model-YOLOv5s-00FFFF?style=for-the-badge&logo=opencv)](https://ultralytics.com/yolo)
+[![TensorRT](https://img.shields.io/badge/Optimized-TensorRT_FP16-00FF7F?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/tensorrt)
+[![Edge AI](https://img.shields.io/badge/Edge_AI-100%25_Offline-00D26A?style=for-the-badge)](/)
 
-<span style="font-size:1.1em; color:#A0D911;">
 **An Intelligent Portal System for People Counting** using computer vision and deep learning, designed for **Edge Computing** on an NVIDIA Jetson Nano.
-</span>
 
-<span style="color:#76B900;">
-This system enables **precise, real-time, bidirectional counting** (entries and exits) **without cloud dependency**, ensuring low latency and complete data privacy.
-</span>
-
-<br>
-
-[![Edge AI](https://img.shields.io/badge/Edge_AI-100%25_Offline-76B900?style=flat-square&logo=raspberrypi&logoColor=white)](https://developer.nvidia.com/embedded)
-[![Privacy](https://img.shields.io/badge/Data_Privacy-No_Cloud-brightgreen?style=flat-square&logo=shield&logoColor=white)](https://developer.nvidia.com/embedded)
+Precise, real-time, bidirectional counting (entries and exits) — **no cloud, no latency, total privacy**.
 
 </div>
 
 ---
 
-<div align="center" style="color: #76B900; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 8px #76B900;">
+<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
 📌 Project Overview
 </div>
 
-This project implements an **overhead (top-down) vision system** to monitor occupant flow through access points. By processing video frames locally, the system detects individuals, tracks their movement, and records crossings through a virtual line.
+Overhead (top-down) vision system that detects, tracks, and counts people crossing a virtual line — all processed **locally**.
 
 ### ✨ Key Goals
-- <span style="color: #76B900;">✅</span> **Real-time Detection:** Leveraging YOLO models optimized for embedded hardware  
-- <span style="color: #76B900;">✅</span> **Local Processing:** 100% offline operation on NVIDIA Jetson Nano  
-- <span style="color: #76B900;">✅</span> **High Performance:** Optimized inference using NVIDIA TensorRT (FP16)  
-- <span style="color: #76B900;">✅</span> **Data Privacy:** No video data leaves the local device
+- <span style="color: #00FF7F;">✅</span> **Real-time Detection** — YOLO models optimized for embedded hardware  
+- <span style="color: #00FF7F;">✅</span> **100% Offline** — Full processing on Jetson Nano  
+- <span style="color: #00FF7F;">✅</span> **Max Performance** — TensorRT FP16 inference  
+- <span style="color: #00FF7F;">✅</span> **Zero Data Leak** — Nothing leaves the device
 
 ---
 
-<div align="center" style="color: #76B900; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 8px #76B900;">
+<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
 🧠 System Architecture
 </div>
 
@@ -50,106 +42,105 @@ This project implements an **overhead (top-down) vision system** to monitor occu
 
 ---
 
-<div align="center" style="color: #76B900; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 8px #76B900;">
+<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
 🔄 Optimization & Multithreading
 </div>
 
-To maintain a stable frame rate on low-resource hardware, the system utilizes a **three-thread architecture**:
+Three-thread architecture for smooth performance on limited hardware:
 
-1. **Capture Thread** — Frame acquisition via GStreamer  
-2. **Processing Thread** — Inference (TensorRT), Tracking (SORT), and counting logic  
-3. **Visualization Thread** — Real-time UI rendering and statistics display
+1. **Capture Thread** → GStreamer frame acquisition  
+2. **Processing Thread** → TensorRT inference + SORT tracking + counting  
+3. **Visualization Thread** → Live UI and stats
 
-### Model Conversion Pipeline (.pt → .onnx → .engine)
-<img src="images/model_conversion.png" alt="Model Conversion Diagram" width="100%"/>
+### Model Conversion Pipeline
+.pt → .onnx → **.engine (FP16)**
+
+<img src="images/model_conversion.png" alt="Model Conversion" width="100%"/>
 
 ---
 
-<div align="center" style="color: #76B900; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 8px #76B900;">
+<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
 📊 Performance & Results
 </div>
 
-Based on the statistical validation of **317 real crossing events** under varied lighting and density conditions:
+Validated on **317 real crossing events** (varying light & density):
 
 <table width="100%" style="border-collapse: collapse; margin: 20px 0;">
   <thead>
-    <tr style="background-color: #76B900; color: white;">
-      <th style="padding: 12px; border: 1px solid #76B900;">Metric</th>
-      <th style="padding: 12px; border: 1px solid #76B900;">YOLOv5s + SORT (Optimized)</th>
+    <tr style="background-color: #00D26A; color: white;">
+      <th style="padding: 12px; border: 2px solid #00FF7F;">Metric</th>
+      <th style="padding: 12px; border: 2px solid #00FF7F;">YOLOv5s + SORT (Optimized)</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td style="padding: 12px; border: 1px solid #76B900;"><strong>Precision</strong></td>
-      <td style="padding: 12px; border: 1px solid #76B900; text-align: center;">0.95</td>
+      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>Precision</strong></td>
+      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.95</td>
+    </tr>
+    <tr style="background-color: #001a0f;">
+      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>Recall</strong></td>
+      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.88</td>
     </tr>
     <tr>
-      <td style="padding: 12px; border: 1px solid #76B900;"><strong>Recall</strong></td>
-      <td style="padding: 12px; border: 1px solid #76B900; text-align: center;">0.88</td>
+      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>F1-Score</strong></td>
+      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.91</td>
+    </tr>
+    <tr style="background-color: #001a0f;">
+      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>MOTA</strong></td>
+      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.72</td>
     </tr>
     <tr>
-      <td style="padding: 12px; border: 1px solid #76B900;"><strong>F1-Score</strong></td>
-      <td style="padding: 12px; border: 1px solid #76B900; text-align: center;">0.91</td>
-    </tr>
-    <tr>
-      <td style="padding: 12px; border: 1px solid #76B900;"><strong>MOTA (Tracking Accuracy)</strong></td>
-      <td style="padding: 12px; border: 1px solid #76B900; text-align: center;">0.72</td>
-    </tr>
-    <tr>
-      <td style="padding: 12px; border: 1px solid #76B900;"><strong>Inference Speed</strong></td>
-      <td style="padding: 12px; border: 1px solid #76B900; text-align: center;"><span style="color: #76B900; font-size: 1.3em; font-weight: bold;">11 FPS</span><br><em>(Stable on Jetson Nano)</em></td>
+      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>Inference Speed</strong></td>
+      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;"><span style="color: #00FF7F; font-size: 1.3em; font-weight: bold;">11 FPS</span><br><em>Stable on Jetson Nano</em></td>
     </tr>
   </tbody>
 </table>
 
-> **Finding:** YOLOv5s combined with the SORT algorithm proved to be the most stable and reliable configuration for this hardware compared to newer YOLOv11 variants.
+> **Finding:** YOLOv5s + SORT was the most stable and reliable combo for this hardware.
 
 ---
 
-<div align="center" style="color: #76B900; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 8px #76B900;">
+<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
 ⚙️ Technologies Used
 </div>
 
-- **Hardware:** NVIDIA Jetson Nano (4GB), EasyULT Webcam Full HD 1080p  
+- **Hardware:** NVIDIA Jetson Nano (4GB), EasyULT Webcam 1080p  
 - **Deep Learning:** YOLOv5s, YOLOv11s  
-- **Inference Engine:** NVIDIA TensorRT (FP16), CUDA, cuDNN  
-- **Tracking:** SORT (Simple Online and Realtime Tracking)  
+- **Inference:** NVIDIA TensorRT (FP16), CUDA, cuDNN  
+- **Tracking:** SORT  
 - **Software:** Python, OpenCV, GStreamer, PyTorch
 
 ---
 
-<div align="center" style="color: #76B900; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 8px #76B900;">
+<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
 🖥️ User Interface
 </div>
 
+Graphical launcher with model selection, live stats, and real-time visualization.
+
 <img src="images/interface.png" alt="User Interface" width="100%"/>
 
-<em>Figure: Real-time interface showing detection bounding boxes, unique IDs, and IN/OUT counters.</em>
+<em>Real-time view: bounding boxes, unique IDs, IN/OUT counters</em>
 
 ---
 
 <div align="center">
 
-### <span style="color:#76B900; font-size:2em; font-weight:bold; text-shadow: 0 0 15px #76B900, 0 0 30px #76B900; animation: pulse 2s infinite;">👨‍💻 Andrés Fábregas</span>
+### 👨‍💻 Author
 
-<span style="color:#A0D911;">Electronic Engineer & Software Developer</span>
+![Visitor Badge](https://img.shields.io/badge/Visitor-Count-00FF7F?style=for-the-badge)
+![Author](https://img.shields.io/badge/Author-Andr%C3%A9s_F%C3%A1bregas-00FF7F?style=for-the-badge&logo=github)
 
-<br>
+**Andrés Fábregas**  
+<span style="color: #00FF7F; font-size: 1.1em;">Electronic Engineer & Software Developer</span>
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-byandresfabregas.vercel.app-76B900?style=for-the-badge&logo=vercel&logoColor=white)](https://byandresfabregas.vercel.app/)
-
-<br><br>
-
-<span style="font-size:0.9em; color:#76B900;">
-Made with ❤️ and a lot of green vibes for Edge AI
-</span>
+[![Portfolio](https://img.shields.io/badge/Portfolio-Visit_Now-00D26A?style=for-the-badge&logo=vercel&logoColor=white)](https://byandresfabregas.vercel.app/)
 
 </div>
 
-<style>
-@keyframes pulse {
-  0% { text-shadow: 0 0 15px #76B900, 0 0 30px #76B900; }
-  50% { text-shadow: 0 0 20px #76B900, 0 0 40px #76B900, 0 0 50px #76B900; }
-  100% { text-shadow: 0 0 15px #76B900, 0 0 30px #76B900; }
-}
-</style>
+<br>
+
+<div align="center">
+  <img src="https://img.shields.io/badge/Built_with_⚡_Edge_AI-00FF7F?style=flat-square" alt="Edge AI"/>
+  <img src="https://img.shields.io/badge/Privacy-First-00FF7F?style=flat-square" alt="Privacy"/>
+</div>
