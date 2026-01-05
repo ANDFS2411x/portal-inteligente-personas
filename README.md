@@ -2,12 +2,12 @@
 
 # 🚪 Intelligent People-Counting Portal 📊
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=Edge%20AI%20Vision%20System&fontSize=42&fontColor=fff&animation=twinkling&fontAlignY=32" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,12,17,18,19&height=180&section=header&text=Edge%20AI%20Vision%20System&fontSize=42&fontColor=fff&animation=twinkling&fontAlignY=32" width="100%"/>
 
 [![NVIDIA Jetson](https://img.shields.io/badge/NVIDIA-Jetson%20Nano%204GB-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://developer.nvidia.com/embedded/jetson-nano)
-[![TensorRT](https://img.shields.io/badge/TensorRT-FP16%20Optimized-00FF00?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/tensorrt)
-[![YOLOv5](https://img.shields.io/badge/YOLOv5s-Detection-FF6B6B?style=for-the-badge)](https://github.com/ultralytics/yolov5)
-[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![TensorRT](https://img.shields.io/badge/TensorRT-FP16%20Optimized-00FF41?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/tensorrt)
+[![YOLOv5](https://img.shields.io/badge/YOLOv5s-Detection-32CD32?style=for-the-badge)](https://github.com/ultralytics/yolov5)
+[![Python](https://img.shields.io/badge/Python-3.8+-2E7D32?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![CUDA](https://img.shields.io/badge/CUDA-10.2-76B900?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
 
 ### 🎯 **Intelligent Portal System for People Counting** 
@@ -134,9 +134,9 @@ graph TD
     F --> G[📊 Visualization Thread]
     G -->|Real-time| H[🖥️ UI Display]
     
-    style A fill:#76B900,stroke:#333,stroke-width:3px,color:#fff
-    style C fill:#FF6B6B,stroke:#333,stroke-width:3px,color:#fff
-    style G fill:#00D9FF,stroke:#333,stroke-width:3px,color:#fff
+    style A fill:#2E7D32,stroke:#1B5E20,stroke-width:3px,color:#fff
+    style C fill:#388E3C,stroke:#1B5E20,stroke-width:3px,color:#fff
+    style G fill:#00C853,stroke:#1B5E20,stroke-width:3px,color:#fff
 ```
 
 </div>
@@ -334,7 +334,7 @@ SORT (Tracking)
 
 <br>
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=24&duration=3000&pause=1000&color=00D9FF&center=true&vCenter=true&width=435&lines=Andr%C3%A9s+F%C3%A1bregas" alt="Typing SVG" />
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=24&duration=3000&pause=1000&color=00C853&center=true&vCenter=true&width=435&lines=Andr%C3%A9s+F%C3%A1bregas" alt="Typing SVG" />
 
 <br>
 
@@ -342,9 +342,9 @@ SORT (Tracking)
 
 <br>
 
-[![Portfolio](https://img.shields.io/badge/🌐_Portfolio-Visit_Site-00D9FF?style=for-the-badge&logoColor=white)](https://byandresfabregas.vercel.app/)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github)](https://github.com)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=for-the-badge&logo=linkedin)](https://linkedin.com)
+[![Portfolio](https://img.shields.io/badge/🌐_Portfolio-Visit_Site-00C853?style=for-the-badge&logoColor=white)](https://byandresfabregas.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-1B5E20?style=for-the-badge&logo=github&logoColor=white)](https://github.com)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-2E7D32?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com)
 
 </div>
 
@@ -354,7 +354,7 @@ SORT (Tracking)
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,12,17,18,19&height=120&section=footer" width="100%"/>
 
 **⚡ Powered by NVIDIA Jetson Nano | Built with ❤️ for Edge AI**
 
