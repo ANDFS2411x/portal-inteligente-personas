@@ -141,7 +141,7 @@ Based on the statistical validation of **317 real crossing events** under varied
 <br><br>
 
 <span style="font-size:0.9em; color:#76B900;">
-Made with ❤️ and a lot of determination. 
+Made with ❤️ and a lot of green vibes for Edge AI
 </span>
 
 </div>
