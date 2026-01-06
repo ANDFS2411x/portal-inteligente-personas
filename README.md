@@ -1,146 +1,274 @@
+<!-- ========================================================= -->
+<!-- INTELLIGENT PEOPLE COUNTING PORTAL — FINAL SHOWCASE -->
+<!-- ========================================================= -->
+
 <div align="center">
 
-# Intelligent People-Counting Portal 🚪📊
+<img
+  src="https://capsule-render.vercel.app/api?type=rect&color=0:0d1117,100:0d1117&height=140&section=header&text=Intelligent%20People-Counting%20Portal&fontSize=40&fontColor=4EE31C&animation=fadeIn"
+/>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-00FF7F?style=for-the-badge&logo=opensourceinitiative)](https://opensource.org/licenses/MIT)
-[![Jetson Nano](https://img.shields.io/badge/Platform-NVIDIA_Jetson_Nano-00D26A?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/embedded/jetson-nano)
-[![YOLO](https://img.shields.io/badge/Model-YOLOv5s-00FFFF?style=for-the-badge&logo=opencv)](https://ultralytics.com/yolo)
-[![TensorRT](https://img.shields.io/badge/Optimized-TensorRT_FP16-00FF7F?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/tensorrt)
-[![Edge AI](https://img.shields.io/badge/Edge_AI-100%25_Offline-00D26A?style=for-the-badge)](/)
+<br/>
 
-**An Intelligent Portal System for People Counting** using computer vision and deep learning, designed for **Edge Computing** on an NVIDIA Jetson Nano.
+<img 
+  src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=26&duration=2300&pause=600&color=4EE31C&center=true&vCenter=true&width=900&lines=Edge+AI+People+Counting+System;Real-Time+Computer+Vision+on+Jetson+Nano;Offline+Inference+Low+Latency+High+Privacy;Designed+for+Embedded+Vision" 
+/>
 
-Precise, real-time, bidirectional counting (entries and exits) — **no cloud, no latency, total privacy**.
+<br/><br/>
+
+<img src="https://img.shields.io/badge/🟢%20Edge%20AI-Jetson%20Nano-4EE31C?style=for-the-badge&logo=nvidia&logoColor=0d1117"/>
+<img src="https://img.shields.io/badge/🟢%20TensorRT-FP16-66FF66?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/🟢%20YOLO-Optimized-2ECC71?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/✔%20Status-Research%20Project-4EE31C?style=for-the-badge"/>
+
+<br/><br/>
+
+<strong style="color:#7CFF9B;">
+Computer Vision · Deep Learning · Edge Computing
+</strong>
 
 </div>
 
 ---
 
-<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
-📌 Project Overview
+<div style="
+background:#0d1117;
+border-left:6px solid #4EE31C;
+padding:18px;
+color:#9AFF9A;
+font-size:15px;
+">
+
+An <strong>Intelligent Portal System for People Counting</strong> using computer vision and deep learning, designed for <strong>Edge Computing</strong> on an <strong>NVIDIA Jetson Nano</strong>.<br/>
+The system performs <strong>real-time, bidirectional counting</strong> (entries and exits) completely <strong>offline</strong>, ensuring <strong>low latency</strong> and <strong>data privacy</strong>.
+
 </div>
-
-Overhead (top-down) vision system that detects, tracks, and counts people crossing a virtual line — all processed **locally**.
-
-### ✨ Key Goals
-- <span style="color: #00FF7F;">✅</span> **Real-time Detection** — YOLO models optimized for embedded hardware  
-- <span style="color: #00FF7F;">✅</span> **100% Offline** — Full processing on Jetson Nano  
-- <span style="color: #00FF7F;">✅</span> **Max Performance** — TensorRT FP16 inference  
-- <span style="color: #00FF7F;">✅</span> **Zero Data Leak** — Nothing leaves the device
 
 ---
 
-<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
-🧠 System Architecture
+## 🟢 Project Demo
+
+<div align="center">
+
+<a href="https://youtu.be/NFXqzJeZJb8?si=ROjr2mFycXRd_YXa" target="_blank">
+  <img 
+    src="https://img.youtube.com/vi/NFXqzJeZJb8/maxresdefault.jpg" 
+    alt="Project Demo Video"
+    width="85%"
+    style="border:3px solid #4EE31C; border-radius:14px;"
+  />
+</a>
+
+<br/><br/>
+
+<strong style="color:#4EE31C;">
+✔ Click to watch the full system demo on YouTube
+</strong>
+
 </div>
-
-### 1️⃣ General System Diagram
-<img src="images/system_diagram.png" alt="General System Diagram" width="100%"/>
-
-### 2️⃣ Block Diagram
-<img src="images/block_diagram.png" alt="Block Diagram" width="100%"/>
 
 ---
 
-<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
-🔄 Optimization & Multithreading
-</div>
+## 🟢 Project Overview
 
-Three-thread architecture for smooth performance on limited hardware:
+<span style="color:#9AFF9A;">
+This project implements an <strong>overhead (top-down) vision system</strong> to monitor occupant flow through access points.<br/>
+By processing video frames locally, the system detects individuals, tracks their trajectories, and registers crossings through a virtual line.
+</span>
 
-1. **Capture Thread** → GStreamer frame acquisition  
-2. **Processing Thread** → TensorRT inference + SORT tracking + counting  
-3. **Visualization Thread** → Live UI and stats
+<div style="
+margin-top:18px;
+padding:18px;
+background:#0d1117;
+border:1px solid #4EE31C55;
+border-radius:14px;
+color:#7CFF9B;
+">
 
-### Model Conversion Pipeline
-.pt → .onnx → **.engine (FP16)**
+<strong>🟢 Core Capabilities</strong>
 
-<img src="images/model_conversion.png" alt="Model Conversion" width="100%"/>
+<table width="100%">
+<tr>
+<td width="50%">
 
----
+✔ <strong>Real-Time Detection</strong><br/>
+YOLO models optimized for embedded hardware<br/>
+Low-latency inference<br/>
+Overhead vision for robust tracking
 
-<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
-📊 Performance & Results
-</div>
+</td>
+<td width="50%">
 
-Validated on **317 real crossing events** (varying light & density):
+✔ <strong>Privacy-First Design</strong><br/>
+100% local processing<br/>
+Zero cloud dependency<br/>
+No external video transmission
 
-<table width="100%" style="border-collapse: collapse; margin: 20px 0;">
-  <thead>
-    <tr style="background-color: #00D26A; color: white;">
-      <th style="padding: 12px; border: 2px solid #00FF7F;">Metric</th>
-      <th style="padding: 12px; border: 2px solid #00FF7F;">YOLOv5s + SORT (Optimized)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>Precision</strong></td>
-      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.95</td>
-    </tr>
-    <tr style="background-color: #001a0f;">
-      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>Recall</strong></td>
-      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.88</td>
-    </tr>
-    <tr>
-      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>F1-Score</strong></td>
-      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.91</td>
-    </tr>
-    <tr style="background-color: #001a0f;">
-      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>MOTA</strong></td>
-      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;">0.72</td>
-    </tr>
-    <tr>
-      <td style="padding: 10px; border: 1px solid #00FF7F;"><strong>Inference Speed</strong></td>
-      <td style="padding: 10px; border: 1px solid #00FF7F; text-align: center;"><span style="color: #00FF7F; font-size: 1.3em; font-weight: bold;">11 FPS</span><br><em>Stable on Jetson Nano</em></td>
-    </tr>
-  </tbody>
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+✔ <strong>High Performance</strong><br/>
+TensorRT FP16 acceleration<br/>
+Multi-threaded execution<br/>
+Stable 11 FPS operation
+
+</td>
+<td width="50%">
+
+✔ <strong>Bidirectional Tracking</strong><br/>
+Entry / exit counting<br/>
+SORT-based trajectory analysis<br/>
+Virtual line crossing logic
+
+</td>
+</tr>
 </table>
 
-> **Finding:** YOLOv5s + SORT was the most stable and reliable combo for this hardware.
-
----
-
-<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
-⚙️ Technologies Used
 </div>
 
-- **Hardware:** NVIDIA Jetson Nano (4GB), EasyULT Webcam 1080p  
-- **Deep Learning:** YOLOv5s, YOLOv11s  
-- **Inference:** NVIDIA TensorRT (FP16), CUDA, cuDNN  
-- **Tracking:** SORT  
-- **Software:** Python, OpenCV, GStreamer, PyTorch
-
 ---
 
-<div align="center" style="color: #00FF7F; font-size: 1.5em; font-weight: bold;">
-🖥️ User Interface
-</div>
-
-Graphical launcher with model selection, live stats, and real-time visualization.
-
-<img src="images/interface.png" alt="User Interface" width="100%"/>
-
-<em>Real-time view: bounding boxes, unique IDs, IN/OUT counters</em>
-
----
+## 🟢 System Architecture
 
 <div align="center">
 
-### 👨‍💻 Author
+### General System Flow
+![General System Diagram](images/system_diagram.png)
 
-![Visitor Badge](https://img.shields.io/badge/Visitor-Count-00FF7F?style=for-the-badge)
-![Author](https://img.shields.io/badge/Author-Andr%C3%A9s_F%C3%A1bregas-00FF7F?style=for-the-badge&logo=github)
+<br/>
 
-**Andrés Fábregas**  
-<span style="color: #00FF7F; font-size: 1.1em;">Electronic Engineer & Software Developer</span>
-
-[![Portfolio](https://img.shields.io/badge/Portfolio-Visit_Now-00D26A?style=for-the-badge&logo=vercel&logoColor=white)](https://byandresfabregas.vercel.app/)
+### Internal Block Architecture
+![Block Diagram](images/block_diagram.png)
 
 </div>
 
-<br>
+---
+
+## 🟢 Optimization & Multithreading
+
+<table style="width:100%; border-collapse:collapse;">
+<thead>
+<tr style="background:linear-gradient(90deg,#4EE31C44,transparent); color:#4EE31C;">
+<th align="left">Thread</th>
+<th align="left">Responsibility</th>
+<th align="left">Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Capture</strong></td>
+<td>Frame acquisition and buffering</td>
+<td>GStreamer pipeline</td>
+</tr>
+<tr style="background:#0d1117;">
+<td><strong>Processing</strong></td>
+<td>Inference, tracking, counting logic</td>
+<td>TensorRT + SORT</td>
+</tr>
+<tr>
+<td><strong>Visualization</strong></td>
+<td>Real-time rendering and statistics</td>
+<td>OpenCV display</td>
+</tr>
+</tbody>
+</table>
+
+---
+
+## 🟢 Performance & Results
 
 <div align="center">
-  <img src="https://img.shields.io/badge/Built_with_⚡_Edge_AI-00FF7F?style=flat-square" alt="Edge AI"/>
-  <img src="https://img.shields.io/badge/Privacy-First-00FF7F?style=flat-square" alt="Privacy"/>
+
+<table style="width:80%;">
+<thead>
+<tr style="background:linear-gradient(90deg,#66FF6644,transparent); color:#66FF66;">
+<th align="left">Metric</th>
+<th align="center">YOLOv5s + SORT</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Precision</td><td align="center">0.95</td></tr>
+<tr><td>Recall</td><td align="center">0.88</td></tr>
+<tr><td>F1-Score</td><td align="center">0.91</td></tr>
+<tr><td>MOTA</td><td align="center">0.72</td></tr>
+<tr><td><strong>Inference Speed</strong></td><td align="center"><strong>11 FPS</strong></td></tr>
+</tbody>
+</table>
+
 </div>
+
+---
+
+## 🟢 Tech Stack
+
+<table width="100%">
+<tr>
+<td width="50%" valign="top">
+
+### Hardware Platform
+<pre style="background:#0d1117; color:#9AFF9A; border:1px solid #4EE31C55; border-radius:12px; padding:16px;">
+NVIDIA Jetson Nano (4GB)
+• 128 CUDA Cores
+• Quad-core ARM Cortex-A57
+• 4GB LPDDR4
+
+EasyULT Webcam Full HD
+• 1080p @ 30 FPS
+• USB Interface
+• Top-down mounting
+</pre>
+
+</td>
+<td width="50%" valign="top">
+
+### Software Stack
+<pre style="background:#0d1117; color:#9AFF9A; border:1px solid #4EE31C55; border-radius:12px; padding:16px;">
+YOLOv5s, YOLOv11s
+TensorRT (FP16)
+CUDA, cuDNN
+OpenCV, GStreamer
+SORT Tracking
+PyTorch
+</pre>
+
+</td>
+</tr>
+</table>
+
+---
+
+<div align="center" style="
+background:#0d1117;
+border:2px solid #4EE31C;
+border-radius:18px;
+padding:30px;
+margin-top:50px;
+">
+
+<img 
+  src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=26&duration=2200&pause=900&color=4EE31C&center=true&vCenter=true&width=500&lines=Andr%C3%A9s+F%C3%A1bregas" 
+/>
+
+<br/>
+
+<strong style="color:#9AFF9A; letter-spacing:1px;">
+Electronic Engineer · Software Developer · Edge AI Specialist
+</strong>
+
+<br/><br/>
+
+<a href="https://byandresfabregas.vercel.app/" target="_blank">
+<img src="https://img.shields.io/badge/🟢%20Portfolio-byandresfabregas.vercel.app-4EE31C?style=for-the-badge"/>
+</a>
+
+<br/><br/>
+
+<span style="color:#7CFF9B;">
+✔ Building high-performance computer vision systems for the edge
+</span>
+
+</div>
+
+---
