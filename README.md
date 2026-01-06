@@ -23,7 +23,7 @@
 
 <br/><br/>
 
-<strong style="color:#9AFF9A;">
+<strong style="color:#7CFF9B;">
 Computer Vision · Deep Learning · Edge Computing
 </strong>
 
@@ -46,7 +46,7 @@ The system performs <strong>real-time, bidirectional counting</strong> (entries 
 
 ---
 
-## 🟢 Project Demo (Full System)
+## 🟢 Project Demo (Video)
 
 <div align="center">
 
@@ -62,37 +62,34 @@ The system performs <strong>real-time, bidirectional counting</strong> (entries 
 <br/><br/>
 
 <strong style="color:#4EE31C;">
-✔ Click to watch the full project demo on YouTube
+✔ Click to watch the full system demo on YouTube
 </strong>
 
 </div>
 
 ---
 
-## 🟢 System Output (Real Inference Result)
+## 🟢 System Output (Live Inference)
 
 <div align="center" style="
 background:#0d1117;
 border:2px solid #4EE31C;
-border-radius:16px;
-padding:20px;
+border-radius:18px;
+padding:22px;
+margin-top:24px;
 ">
 
-<video 
-  src="images/video_001.mp4"
+<img 
+  src="images/video_001.gif" 
+  alt="People Counting System Output"
   width="90%"
-  controls
-  autoplay
-  muted
-  loop
-  style="border-radius:12px; border:1px solid #4EE31C55;"
->
-</video>
+  style="border-radius:14px;"
+/>
 
 <br/><br/>
 
-<strong style="color:#9AFF9A;">
-✔ Real-time output generated directly on the NVIDIA Jetson Nano
+<strong style="color:#7CFF9B;">
+✔ Real-time detection, tracking IDs, and IN / OUT counting running fully on-device
 </strong>
 
 </div>
@@ -197,6 +194,44 @@ Virtual line crossing logic
 </table>
 
 </div>
+
+---
+
+## 🟢 Tech Stack
+
+<table width="100%">
+<tr>
+<td width="50%" valign="top">
+
+### Hardware Platform
+<pre style="background:#0d1117; color:#9AFF9A; border:1px solid #4EE31C55; border-radius:12px; padding:16px;">
+NVIDIA Jetson Nano (4GB)
+• 128 CUDA Cores
+• Quad-core ARM Cortex-A57
+• 4GB LPDDR4
+
+EasyULT Webcam Full HD
+• 1080p @ 30 FPS
+• USB Interface
+• Top-down mounting
+</pre>
+
+</td>
+<td width="50%" valign="top">
+
+### Software Stack
+<pre style="background:#0d1117; color:#9AFF9A; border:1px solid #4EE31C55; border-radius:12px; padding:16px;">
+YOLOv5s, YOLOv11s
+TensorRT (FP16)
+CUDA, cuDNN
+OpenCV, GStreamer
+SORT Tracking
+PyTorch
+</pre>
+
+</td>
+</tr>
+</table>
 
 ---
 
