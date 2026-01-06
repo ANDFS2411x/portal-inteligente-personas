@@ -250,7 +250,7 @@ margin-top:50px;
 <br/>
 
 <strong style="color:#9AFF9A; letter-spacing:1px;">
-Electronic Engineer · Software Developer · Edge AI Specialist
+Electronic Engineer · Software Developer 
 </strong>
 
 <br/><br/>
